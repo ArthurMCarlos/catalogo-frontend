@@ -5,7 +5,7 @@ async function fetchProdutos() {
   try {
     const res = await fetch(API_URL);
     produtos = await res.json();
-    fetchProdutos();
+    renderCatalog();
   } catch (err) {
     console.error("Erro ao buscar produtos:", err);
   }
@@ -95,7 +95,6 @@ async function removerProduto(nome) {
   }
 
   produtos = produtos.filter(p => p.nome !== nome);
-  salvarProdutos(novo);
   fetchProdutos();
 }
 
@@ -111,7 +110,7 @@ productForm.onsubmit = (e) => {
       .map(input => input.value.trim())
       .filter(val => val !== "")
   };
-  produtos.push(novo);
+  
   salvarProdutos(novo);
   productForm.reset();
   linksContainer.innerHTML = ''; // limpa links antigos
