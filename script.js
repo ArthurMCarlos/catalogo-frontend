@@ -98,7 +98,7 @@ async function removerProduto(nome) {
   fetchProdutos();
 }
 
-productForm.onsubmit = (e) => {
+productForm.onsubmit = async (e) => {
   e.preventDefault();
   const novo = {
     nome: document.getElementById("nome").value,
@@ -111,11 +111,11 @@ productForm.onsubmit = (e) => {
       .filter(val => val !== "")
   };
   
-  salvarProdutos(novo);
+  await salvarProdutos(novo);
+  await fetchProdutos();
   productForm.reset();
-  linksContainer.innerHTML = ''; // limpa links antigos
-  adicionarCampoLink(); // adiciona um campo novo
-  fetchProdutos();
+  linksContainer.innerHTML = '';
+  adicionarCampoLink();
 };
 
 function abrirDetalhes(produto) {
@@ -204,4 +204,5 @@ toggleCategoriesBtn.addEventListener("click", () => {
 });
 
 
-  
+
+window.toggleTheme = toggleTheme;
