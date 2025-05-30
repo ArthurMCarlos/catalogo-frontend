@@ -98,7 +98,7 @@ async function removerProduto(nome) {
   fetchProdutos();
 }
 
-productForm.onsubmit = async (e) => {
+productForm.onsubmit = (e) => {
   e.preventDefault();
   const novo = {
     nome: document.getElementById("nome").value,
@@ -111,11 +111,11 @@ productForm.onsubmit = async (e) => {
       .filter(val => val !== "")
   };
   
-  await salvarProdutos(novo);
-  await fetchProdutos();
+  salvarProdutos(novo);
   productForm.reset();
-  linksContainer.innerHTML = '';
-  adicionarCampoLink();
+  linksContainer.innerHTML = ''; // limpa links antigos
+  adicionarCampoLink(); // adiciona um campo novo
+  fetchProdutos();
 };
 
 function abrirDetalhes(produto) {
@@ -205,4 +205,6 @@ toggleCategoriesBtn.addEventListener("click", () => {
 
 
 
-window.toggleTheme = toggleTheme;
+
+// Atualização automática a cada 5 segundos
+setInterval(fetchProdutos, 5000);
