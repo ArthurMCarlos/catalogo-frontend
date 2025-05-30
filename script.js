@@ -1,7 +1,7 @@
 
 const API_URL = "https://catalogo-backend-97xq.onrender.com/api/produtos";
 
-let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+let produtos = [];
 
 const catalog = document.getElementById("catalog");
 const categoryButtons = document.querySelectorAll("#categoryButtons button");
@@ -17,8 +17,36 @@ let categoriaAtual = "todos";
 let paginaAtual = 1;
 const itensPorPagina = 20;
 
-function salvarProdutos() {
-  localStorage.setItem("produtos", JSON.stringify(produtos));
+async function carregarProdutos() {
+  try {
+    const res = await fetch(API_URL);
+    produtos = await res.json();
+    renderCatalog();
+  } catch (error) {
+    console.error("Erro ao carregar produtos:", error);
+  }
+}
+
+async function salvarProduto(produto) {
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(produto),
+    });
+    await carregarProdutos();
+  } catch (error) {
+    console.error("Erro ao salvar produto:", error);
+  }
+}
+
+async function removerProduto(id) {
+  try {
+    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    await carregarProdutos();
+  } catch (error) {
+    console.error("Erro ao remover produto:", error);
+  }
 }
 
 function renderCatalog() {
@@ -43,7 +71,7 @@ function renderCatalog() {
       <div class="item-info">
         <h3>${p.nome}</h3>
         <p>${p.descricao}</p>
-        <button class="remove-btn" onclick="event.stopPropagation(); removerProduto('${p.nome}')">🗑️</button>
+        <button class="remove-btn" onclick="event.stopPropagation(); removerProduto('${p._id}')">🗑️</button>
         <span class="price">${p.preco}</span>
         <div class="links-preview">
           ${p.link.map((l, i) => `<a href="${l}" target="_blank">Link ${i + 1}</a>`).join("")}
@@ -68,13 +96,7 @@ function renderCatalog() {
   }
 }
 
-function removerProduto(nome) {
-  produtos = produtos.filter(p => p.nome !== nome);
-  salvarProdutos();
-  renderCatalog();
-}
-
-productForm.onsubmit = (e) => {
+productForm.onsubmit = async (e) => {
   e.preventDefault();
   const novo = {
     nome: document.getElementById("nome").value,
@@ -86,12 +108,10 @@ productForm.onsubmit = (e) => {
       .map(input => input.value.trim())
       .filter(val => val !== "")
   };
-  produtos.push(novo);
-  salvarProdutos();
+  await salvarProduto(novo);
   productForm.reset();
-  linksContainer.innerHTML = ''; // limpa links antigos
-  adicionarCampoLink(); // adiciona um campo novo
-  renderCatalog();
+  linksContainer.innerHTML = "";
+  adicionarCampoLink();
 };
 
 function abrirDetalhes(produto) {
@@ -115,13 +135,6 @@ function voltarCatalogo() {
   mainPage.style.display = "block";
 }
 
-function toggleTheme() {
-  document.body.classList.toggle("dark-mode");
-  const isDark = document.body.classList.contains("dark-mode");
-  localStorage.setItem("modoEscuro", isDark ? "sim" : "nao");
-  document.querySelector(".toggle-theme").textContent = isDark ? "Modo Claro" : "Modo Escuro";
-}
-
 function adicionarCampoLink(valor = "") {
   const grupo = document.createElement("div");
   grupo.className = "link-group";
@@ -133,51 +146,12 @@ function adicionarCampoLink(valor = "") {
   linksContainer.appendChild(grupo);
 }
 
-document.getElementById("addLinkBtn").addEventListener("click", () => {
-  adicionarCampoLink();
-});
-
 window.onload = () => {
   const savedTheme = localStorage.getItem("modoEscuro");
   if (savedTheme === "sim") {
     document.body.classList.add("dark-mode");
     document.querySelector(".toggle-theme").textContent = "Modo Claro";
   }
-  adicionarCampoLink(); // ao carregar a página, um campo já aparece
-  renderCatalog();
+  adicionarCampoLink();
+  carregarProdutos();
 };
-
-document.getElementById("toggleFormBtn").addEventListener("click", () => {
-  productForm.classList.toggle("hidden");
-  document.getElementById("toggleFormBtn").textContent = productForm.classList.contains("hidden")
-    ? "➕ Adicionar Produto"
-    : "✖️ Fechar Formulário";
-});
-
-categoryButtons.forEach(btn => {
-  btn.onclick = () => {
-    categoryButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    categoriaAtual = btn.dataset.category;
-    paginaAtual = 1;
-    renderCatalog();
-  };
-});
-
-searchInput.addEventListener("input", () => {
-  paginaAtual = 1;
-  renderCatalog();
-});
-
-const toggleCategoriesBtn = document.getElementById("toggleCategoriesBtn");
-const categoriesContainer = document.querySelector(".category-buttons-container");
-let categoriasColapsadas = true;
-
-toggleCategoriesBtn.addEventListener("click", () => {
-  categoriasColapsadas = !categoriasColapsadas;
-  categoriesContainer.classList.toggle("collapsed");
-  toggleCategoriesBtn.textContent = categoriasColapsadas ? "Mostrar Categorias" : "Ocultar Categorias";
-});
-
-
-
