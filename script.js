@@ -98,7 +98,7 @@ async function removerProduto(nome) {
   fetchProdutos();
 }
 
-productForm.onsubmit = (e) => {
+productForm.onsubmit = async (e) => {
   e.preventDefault();
   const novo = {
     nome: document.getElementById("nome").value,
