@@ -6,7 +6,7 @@ async function carregarProdutos() {
   try {
     const res = await fetch(API_URL);
     produtos = await res.json();
-    fetchProdutos();
+    renderCatalog();
   } catch (e) {
     console.error("Erro ao carregar produtos da API:", e);
   }
@@ -24,16 +24,7 @@ async function salvarProdutos(produto) {
   }
 }
 
-async async function removerProduto(nome) {
-  const produto = produtos.find(p => p.nome === nome);
-  if (!produto || !produto._id) return alert("Produto não encontrado");
-  try {
-    await fetch(`${API_URL}/${produto._id}`, { method: "DELETE" });
-    await fetchProdutos();
-  } catch (err) {
-    console.error("Erro ao remover produto:", err);
-  }
-
+async function removerProduto(nome) {
   const produto = produtos.find(p => p.nome === nome);
   if (!produto || !produto._id) return alert("Produto não encontrado");
   try {
@@ -69,7 +60,6 @@ function renderCatalog() {
 }
 
 window.onload = () => {
-  fetchProdutos();
   carregarProdutos();
   document.getElementById("productForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
