@@ -204,3 +204,4 @@ toggleCategoriesBtn.addEventListener("click", () => {
 });
 
 
+  
