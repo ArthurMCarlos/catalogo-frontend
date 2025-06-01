@@ -65,7 +65,7 @@ function renderCatalog() {
         <h3>${p.nome}</h3>
         <p>${p.descricao}</p>
         <button class="remove-btn" onclick="event.stopPropagation(); removerProduto('${p._id}')">🗑️</button>
-        <button class="remove-btn" style="top: 2.2rem; background: #3498db;" onclick="event.stopPropagation(); editarProduto('${p._id}')">✏️</button>
+        <button class="remove-btn edit-btn" onclick="event.stopPropagation(); editarProduto('${p._id}')">✏️</button>
         <span class="price">${p.preco}</span>
         <div class="links-preview">
           ${p.link.map((l, i) => `<a href="${l}" target="_blank">Link ${i + 1}</a>`).join("")}
