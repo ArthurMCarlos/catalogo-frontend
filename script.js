@@ -1,8 +1,5 @@
-
 let produtos = [];
 const API_URL = "https://catalogo-backend-97xq.onrender.com/api/produtos";
-
-let editandoProdutoId = null;
 
 async function fetchProdutos() {
   try {
@@ -30,19 +27,11 @@ const itensPorPagina = 20;
 
 async function salvarProdutos(produto) {
   try {
-    if (editandoProdutoId) {
-      if (editandoProdutoId) await fetch(`${API_URL}/${editandoProdutoId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(produto),
-      });
-    } else {
-      await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(produto),
-      });
-    }
+    await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(produto)
+    });
   } catch (err) {
     console.error("Erro ao salvar produto:", err);
   }
@@ -71,7 +60,6 @@ function renderCatalog() {
         <h3>${p.nome}</h3>
         <p>${p.descricao}</p>
         <button class="remove-btn" onclick="event.stopPropagation(); removerProduto('${p.nome}')">🗑️</button>
-        <button class="remove-btn" style="top: 2.2rem; background: #3498db" onclick="event.stopPropagation(); editarProduto('${p._id}')">✏️</button>
         <span class="price">${p.preco}</span>
         <div class="links-preview">
           ${p.link.map((l, i) => `<a href="${l}" target="_blank">Link ${i + 1}</a>`).join("")}
@@ -105,27 +93,12 @@ async function removerProduto(nome) {
   } catch (err) {
     console.error("Erro ao remover produto:", err);
   }
+
+  produtos = produtos.filter(p => p.nome !== nome);
+  fetchProdutos();
 }
 
-function editarProduto(id) {
-  const produto = produtos.find(p => p._id === id);
-  if (!produto) return alert("Produto não encontrado");
-  document.getElementById("nome").value = produto.nome;
-  document.getElementById("descricao").value = produto.descricao;
-  document.getElementById("preco").value = produto.preco;
-  document.getElementById("imagem").value = produto.imagem;
-  document.getElementById("categoria").value = produto.categoria;
-
-  linksContainer.innerHTML = '';
-  produto.link.forEach(link => adicionarCampoLink(link));
-
-  productForm.classList.remove("hidden");
-  document.getElementById("toggleFormBtn").textContent = "✖️ Fechar Formulário";
-  editandoProdutoId = id;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-productForm.onsubmit = async (e) => {
+productForm.onsubmit = (e) => {
   e.preventDefault();
   const novo = {
     nome: document.getElementById("nome").value,
@@ -137,13 +110,11 @@ productForm.onsubmit = async (e) => {
       .map(input => input.value.trim())
       .filter(val => val !== "")
   };
-  await salvarProdutos(novo);
+  
+  salvarProdutos(novo);
   productForm.reset();
-  linksContainer.innerHTML = '';
-  adicionarCampoLink();
-  editandoProdutoId = null;
-  productForm.classList.add("hidden");
-  document.getElementById("toggleFormBtn").textContent = "➕ Adicionar Produto";
+  linksContainer.innerHTML = ''; // limpa links antigos
+  adicionarCampoLink(); // adiciona um campo novo
   fetchProdutos();
 };
 
@@ -197,18 +168,13 @@ window.onload = () => {
     document.body.classList.add("dark-mode");
     document.querySelector(".toggle-theme").textContent = "Modo Claro";
   }
-  adicionarCampoLink();
+  adicionarCampoLink(); // ao carregar a página, um campo já aparece
+  fetchProdutos();
 };
 
 document.getElementById("toggleFormBtn").addEventListener("click", () => {
-  const isHidden = productForm.classList.toggle("hidden");
-  if (isHidden) {
-    editandoProdutoId = null;
-    productForm.reset();
-    linksContainer.innerHTML = '';
-    adicionarCampoLink();
-  }
-  document.getElementById("toggleFormBtn").textContent = isHidden
+  productForm.classList.toggle("hidden");
+  document.getElementById("toggleFormBtn").textContent = productForm.classList.contains("hidden")
     ? "➕ Adicionar Produto"
     : "✖️ Fechar Formulário";
 });
@@ -228,10 +194,17 @@ searchInput.addEventListener("input", () => {
   fetchProdutos();
 });
 
+const categoriesContainer = document.querySelector(".category-buttons-container");
+let categoriasColapsadas = true;
+
 toggleCategoriesBtn.addEventListener("click", () => {
   categoriasColapsadas = !categoriasColapsadas;
   categoriesContainer.classList.toggle("collapsed");
   toggleCategoriesBtn.textContent = categoriasColapsadas ? "Mostrar Categorias" : "Ocultar Categorias";
 });
 
+
+
+
+// Atualização automática a cada 5 segundos
 setInterval(fetchProdutos, 5000);
