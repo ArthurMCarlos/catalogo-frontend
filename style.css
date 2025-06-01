@@ -484,8 +484,12 @@ body.dark-mode .remove-btn {
     }
 
     .edit-btn {
-      top: 2.5rem !important;
+      position: absolute;
+      top: 3.2rem !important;
+      right: 0.5rem;
       background: #3498db !important;
+      margin-top: 0.3rem;
     }
+    
 
     
