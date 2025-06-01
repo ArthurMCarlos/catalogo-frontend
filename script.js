@@ -1,5 +1,7 @@
+
 let produtos = [];
 const API_URL = "https://catalogo-backend-97xq.onrender.com/api/produtos";
+let editandoProdutoId = null;
 
 async function fetchProdutos() {
   try {
@@ -25,13 +27,16 @@ let categoriaAtual = "todos";
 let paginaAtual = 1;
 const itensPorPagina = 20;
 
-async function salvarProdutos(produto) {
+async function salvarProduto(produto) {
   try {
-    await fetch(API_URL, {
-      method: "POST",
+    const method = editandoProdutoId ? "PUT" : "POST";
+    const url = editandoProdutoId ? `${API_URL}/${editandoProdutoId}` : API_URL;
+    await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(produto)
     });
+    editandoProdutoId = null;
   } catch (err) {
     console.error("Erro ao salvar produto:", err);
   }
@@ -59,7 +64,8 @@ function renderCatalog() {
       <div class="item-info">
         <h3>${p.nome}</h3>
         <p>${p.descricao}</p>
-        <button class="remove-btn" onclick="event.stopPropagation(); removerProduto('${p.nome}')">🗑️</button>
+        <button class="remove-btn" onclick="event.stopPropagation(); removerProduto('${p._id}')">🗑️</button>
+        <button class="remove-btn" style="top: 2.2rem; background: #3498db;" onclick="event.stopPropagation(); editarProduto('${p._id}')">✏️</button>
         <span class="price">${p.preco}</span>
         <div class="links-preview">
           ${p.link.map((l, i) => `<a href="${l}" target="_blank">Link ${i + 1}</a>`).join("")}
@@ -84,21 +90,35 @@ function renderCatalog() {
   }
 }
 
-async function removerProduto(nome) {
-  const produto = produtos.find(p => p.nome === nome);
-  if (!produto || !produto._id) return alert("Produto não encontrado");
+async function removerProduto(id) {
   try {
-    await fetch(`${API_URL}/${produto._id}`, { method: "DELETE" });
-    await fetchProdutos();
+    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    fetchProdutos();
   } catch (err) {
     console.error("Erro ao remover produto:", err);
   }
-
-  produtos = produtos.filter(p => p.nome !== nome);
-  fetchProdutos();
 }
 
-productForm.onsubmit = (e) => {
+function editarProduto(id) {
+  const produto = produtos.find(p => p._id === id);
+  if (!produto) return alert("Produto não encontrado");
+
+  document.getElementById("nome").value = produto.nome;
+  document.getElementById("descricao").value = produto.descricao;
+  document.getElementById("preco").value = produto.preco;
+  document.getElementById("imagem").value = produto.imagem;
+  document.getElementById("categoria").value = produto.categoria;
+
+  linksContainer.innerHTML = '';
+  produto.link.forEach(link => adicionarCampoLink(link));
+
+  productForm.classList.remove("hidden");
+  document.getElementById("toggleFormBtn").textContent = "✖️ Fechar Formulário";
+  editandoProdutoId = id;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+productForm.onsubmit = async (e) => {
   e.preventDefault();
   const novo = {
     nome: document.getElementById("nome").value,
@@ -110,11 +130,12 @@ productForm.onsubmit = (e) => {
       .map(input => input.value.trim())
       .filter(val => val !== "")
   };
-  
-  salvarProdutos(novo);
+  await salvarProduto(novo);
   productForm.reset();
-  linksContainer.innerHTML = ''; // limpa links antigos
-  adicionarCampoLink(); // adiciona um campo novo
+  linksContainer.innerHTML = '';
+  adicionarCampoLink();
+  productForm.classList.add("hidden");
+  document.getElementById("toggleFormBtn").textContent = "➕ Adicionar Produto";
   fetchProdutos();
 };
 
@@ -168,13 +189,18 @@ window.onload = () => {
     document.body.classList.add("dark-mode");
     document.querySelector(".toggle-theme").textContent = "Modo Claro";
   }
-  adicionarCampoLink(); // ao carregar a página, um campo já aparece
-  fetchProdutos();
+  adicionarCampoLink();
 };
 
 document.getElementById("toggleFormBtn").addEventListener("click", () => {
-  productForm.classList.toggle("hidden");
-  document.getElementById("toggleFormBtn").textContent = productForm.classList.contains("hidden")
+  const isHidden = productForm.classList.toggle("hidden");
+  if (isHidden) {
+    editandoProdutoId = null;
+    productForm.reset();
+    linksContainer.innerHTML = '';
+    adicionarCampoLink();
+  }
+  document.getElementById("toggleFormBtn").textContent = isHidden
     ? "➕ Adicionar Produto"
     : "✖️ Fechar Formulário";
 });
@@ -194,17 +220,4 @@ searchInput.addEventListener("input", () => {
   fetchProdutos();
 });
 
-const categoriesContainer = document.querySelector(".category-buttons-container");
-let categoriasColapsadas = true;
-
-toggleCategoriesBtn.addEventListener("click", () => {
-  categoriasColapsadas = !categoriasColapsadas;
-  categoriesContainer.classList.toggle("collapsed");
-  toggleCategoriesBtn.textContent = categoriasColapsadas ? "Mostrar Categorias" : "Ocultar Categorias";
-});
-
-
-
-
-// Atualização automática a cada 5 segundos
 setInterval(fetchProdutos, 5000);
